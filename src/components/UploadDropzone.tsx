@@ -102,7 +102,7 @@ export function UploadDropzone({ messages }: { messages: Messages }) {
         onDragLeave={() => setDragOver(false)}
         onDrop={onDrop}
         onClick={() => !isUploading && inputRef.current?.click()}
-        className={`flex min-h-56 cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-10 text-center transition ${
+        className={`relative flex min-h-56 cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-10 text-center transition ${
           dragOver
             ? 'border-slate-900 bg-slate-100'
             : 'border-slate-300 bg-white hover:border-slate-400 hover:bg-slate-50'
@@ -139,6 +139,23 @@ export function UploadDropzone({ messages }: { messages: Messages }) {
             if (file) pickFile(file);
           }}
         />
+
+        {isUploading && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-2xl bg-white/85 backdrop-blur-[2px]">
+            <div
+              className="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-slate-900"
+              aria-hidden
+            />
+            <div className="space-y-1 text-center">
+              <p className="text-sm font-semibold text-slate-900">
+                {messages.upload_processing}
+              </p>
+              <p className="text-xs text-slate-500">
+                {messages.upload_waiting_report}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {state.kind === 'error' && (
@@ -154,6 +171,12 @@ export function UploadDropzone({ messages }: { messages: Messages }) {
           disabled={state.kind !== 'selected'}
           className="inline-flex items-center justify-center rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
         >
+          {isUploading && (
+            <span
+              className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+              aria-hidden
+            />
+          )}
           {isUploading ? messages.upload_processing : messages.upload_button}
         </button>
         {selectedFile && !isUploading && (
