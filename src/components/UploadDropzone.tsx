@@ -4,6 +4,8 @@ import { useCallback, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MAX_PDF_BYTES, PDF_MIME } from '@/config/constants';
 import type { Messages } from '@/lib/i18n';
+import { cacheReport } from '@/lib/report-cache';
+import type { Report } from '@/lib/types';
 
 type UiState =
   | { kind: 'idle' }
@@ -67,7 +69,7 @@ export function UploadDropzone({ messages }: { messages: Messages }) {
     try {
       const res = await fetch('/api/upload', { method: 'POST', body });
       const json = (await res.json()) as
-        | { success: true; data: { reportId: string } }
+        | { success: true; data: { reportId: string; report: Report } }
         | { success: false; error: string };
 
       if (!json.success) {
@@ -75,6 +77,7 @@ export function UploadDropzone({ messages }: { messages: Messages }) {
         return;
       }
 
+      cacheReport(json.data.report);
       router.push(`/report/${json.data.reportId}`);
     } catch {
       setState({ kind: 'error', message: messages.error_upload_failed });

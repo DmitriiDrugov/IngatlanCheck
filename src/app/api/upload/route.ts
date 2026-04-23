@@ -5,7 +5,7 @@ import { analyzeTulajdoniLap } from '@/lib/analyzer';
 import { createFailedReport, createReport } from '@/lib/report-store';
 import { pickLocale } from '@/lib/i18n';
 import { recordFailure } from '@/lib/stats';
-import type { ApiResponse } from '@/lib/types';
+import type { ApiResponse, Report } from '@/lib/types';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
@@ -27,7 +27,7 @@ function hasPdfMagic(buffer: Buffer): boolean {
  */
 export async function POST(
   req: NextRequest
-): Promise<NextResponse<ApiResponse<{ reportId: string }>>> {
+): Promise<NextResponse<ApiResponse<{ reportId: string; report: Report }>>> {
   try {
     const locale = pickLocale(req.cookies.get('locale')?.value);
     const form = await req.formData();
@@ -78,7 +78,7 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      data: { reportId: report.id },
+      data: { reportId: report.id, report },
     });
   } catch (e) {
     console.error('[upload] unexpected', e);
