@@ -1,10 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
-import { MAX_PDF_BYTES, PDF_MIME, STORAGE_BUCKET } from '@/config/constants';
+import { MAX_PDF_BYTES, PDF_MIME } from '@/config/constants';
+import { extractPdfText } from '@/lib/pdf';
+import { analyzeTulajdoniLap } from '@/lib/analyzer';
+import { createFailedReport, createReport } from '@/lib/report-store';
+import { recordFailure } from '@/lib/stats';
 import type { ApiResponse } from '@/lib/types';
 
 export const runtime = 'nodejs';
+export const maxDuration = 30;
 
+/**
+ * Upload + analyze pipeline (showcase):
+ *   1. Validate MIME + size
+ *   2. Extract text with pdf-parse
+ *   3. Run deterministic rule-based analyzer
+ *   4. Store the report in-memory and return its id
+ */
 export async function POST(
   req: NextRequest
 ): Promise<NextResponse<ApiResponse<{ reportId: string }>>> {
@@ -14,72 +25,53 @@ export async function POST(
 
     if (!(file instanceof File)) {
       return NextResponse.json(
-        { success: false, error: 'No file provided' },
+        { success: false, error: 'NO_FILE' },
         { status: 400 }
       );
     }
 
     if (file.type !== PDF_MIME) {
       return NextResponse.json(
-        { success: false, error: 'Only PDF files are accepted' },
+        { success: false, error: 'INVALID_FILE_TYPE' },
         { status: 400 }
       );
     }
 
     if (file.size > MAX_PDF_BYTES) {
       return NextResponse.json(
-        { success: false, error: 'File exceeds 10 MB limit' },
+        { success: false, error: 'FILE_TOO_LARGE' },
         { status: 400 }
       );
     }
 
-    const supabase = getSupabaseAdmin();
-
-    const { data: report, error: insertError } = await supabase
-      .from('reports')
-      .insert({ status: 'pending' })
-      .select('id')
-      .single();
-
-    if (insertError || !report) {
-      console.error('[upload] insert failed', insertError);
-      return NextResponse.json(
-        { success: false, error: 'Failed to create report' },
-        { status: 500 }
-      );
-    }
-
-    const storagePath = `${report.id}/original.pdf`;
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    const { error: uploadError } = await supabase.storage
-      .from(STORAGE_BUCKET)
-      .upload(storagePath, buffer, {
-        contentType: PDF_MIME,
-        upsert: false,
-      });
-
-    if (uploadError) {
-      console.error('[upload] storage upload failed', uploadError);
+    let rawText: string;
+    try {
+      rawText = await extractPdfText(buffer);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'pdf-extract';
+      console.error('[upload] pdf extraction failed', message);
+      const report = createFailedReport('PDF_EXTRACTION_FAILED');
+      recordFailure();
       return NextResponse.json(
-        { success: false, error: 'Failed to store PDF' },
-        { status: 500 }
+        { success: false, error: 'PDF_EXTRACTION_FAILED' },
+        { status: 400, headers: { 'x-report-id': report.id } }
       );
     }
 
-    await supabase
-      .from('reports')
-      .update({ pdf_storage_path: storagePath })
-      .eq('id', report.id);
+    const analysis = analyzeTulajdoniLap(rawText);
+    const report = createReport(analysis);
 
     return NextResponse.json({
       success: true,
       data: { reportId: report.id },
     });
   } catch (e) {
-    console.error('[upload] unexpected error', e);
+    console.error('[upload] unexpected', e);
+    recordFailure();
     return NextResponse.json(
-      { success: false, error: 'Unexpected server error' },
+      { success: false, error: 'INTERNAL_ERROR' },
       { status: 500 }
     );
   }
