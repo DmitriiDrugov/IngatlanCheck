@@ -37,7 +37,7 @@ export function ReportView({ analysis }: { analysis: AnalysisResult }) {
           <p className="mt-1 text-sm text-slate-500">
             {HU.risk_label}:{' '}
             <span className="font-medium text-slate-700">
-              {analysis.stats.flags_total} jelzés ·{' '}
+              {analysis.stats.flags_total} jelzés -{' '}
               {analysis.tulajdonosok.length} tulajdonos
             </span>
           </p>
@@ -48,7 +48,7 @@ export function ReportView({ analysis }: { analysis: AnalysisResult }) {
             href="/upload"
             className="text-xs font-medium text-slate-500 underline-offset-2 hover:underline"
           >
-            {HU.report_back} →
+            {HU.report_back} {'->'}
           </Link>
         </div>
       </header>

@@ -16,7 +16,7 @@ export const HU = {
   benefits_title: 'Miért IngatlanCheck?',
   benefit_speed_title: 'Gyors elemzés',
   benefit_speed_desc:
-    'Pár másodperc alatt strukturált jelentést kapsz a dokumentumról — nincs várólista.',
+    'Pár másodperc alatt strukturált jelentést kapsz a dokumentumról, nincs várólista.',
   benefit_privacy_title: 'Adatvédelem elsőként',
   benefit_privacy_desc:
     'A dokumentumokat memóriában dolgozzuk fel, a végén az eredeti PDF-et nem tároljuk.',
@@ -38,9 +38,9 @@ export const HU = {
   upload_subtitle:
     'Csak PDF formátum, maximum 10 MB. A fájlt nem tároljuk tartósan.',
   upload_drag: 'Húzd ide a PDF-et vagy kattints a tallózáshoz',
-  upload_limit: 'Maximum 10 MB · csak PDF',
+  upload_limit: 'Maximum 10 MB - csak PDF',
   upload_button: 'Elemzés indítása',
-  upload_processing: 'Feldolgozás folyamatban…',
+  upload_processing: 'Feldolgozás folyamatban...',
   upload_try_another: 'Másik fájl kiválasztása',
 
   report_title: 'Tulajdoni lap elemzés',
@@ -95,7 +95,7 @@ export const HU = {
   stats_top_categories: 'Leggyakoribb kategóriák',
   stats_updated: 'Utolsó frissítés',
   stats_empty:
-    'Még nincs elemzés ebben a munkamenetben. Tölts fel egy tulajdoni lapot a kezdéshez!',
+    'Még nincs elemzés ebben a munkamenetben. Tölts fel egy tulajdoni lapot a kezdéshez.',
 
   doc_stats_chars: 'Karakterek',
   doc_stats_words: 'Szavak',
@@ -106,7 +106,7 @@ export const HU = {
   disclaimer:
     'Ez az elemzés tájékoztató jellegű, nem minősül jogi tanácsadásnak. Ingatlanvásárlás előtt mindig forduljon ügyvédhez.',
   showcase_banner:
-    'Ez egy bemutató (showcase) verzió — a rendszer szabályalapú szövegelemzést végez, nem használ AI-t.',
+    'Ez egy bemutató (showcase) verzió - a rendszer szabályalapú szövegelemzést végez, nem használ AI-t.',
 
   footer_about:
     'Az IngatlanCheck egy automatikus dokumentum-előszűrő eszköz, nem helyettesíti az ügyvédi ellenőrzést.',
@@ -123,7 +123,7 @@ export const HU = {
     'A jelentés legfeljebb 2 órán át elérhető a generált azonosítóval, majd a memóriából automatikusan törlődik.',
   privacy_rights_title: 'Az érintett jogai',
   privacy_rights_body:
-    'Mivel fiókot nem hozunk létre és személyes adatokat tartósan nem tárolunk, a bemutató verzió használata után külön törlési kérelem nem szükséges — a szerver újraindításával minden adat törlődik.',
+    'Mivel fiókot nem hozunk létre és személyes adatokat tartósan nem tárolunk, a bemutató verzió használata után külön törlési kérelem nem szükséges - a szerver újraindításával minden adat törlődik.',
   privacy_contact_title: 'Kapcsolat',
   privacy_contact_body:
     'Adatvédelmi kérdésekkel forduljon a bemutatóért felelős szervezethez.',

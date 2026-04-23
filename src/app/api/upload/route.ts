@@ -9,9 +9,17 @@ import type { ApiResponse } from '@/lib/types';
 export const runtime = 'nodejs';
 export const maxDuration = 30;
 
+function looksLikePdfFile(file: File): boolean {
+  return file.type === PDF_MIME || file.name.toLowerCase().endsWith('.pdf');
+}
+
+function hasPdfMagic(buffer: Buffer): boolean {
+  return buffer.subarray(0, 5).toString('ascii') === '%PDF-';
+}
+
 /**
  * Upload + analyze pipeline (showcase):
- *   1. Validate MIME + size
+ *   1. Validate file size and PDF signature
  *   2. Extract text with pdf-parse
  *   3. Run deterministic rule-based analyzer
  *   4. Store the report in-memory and return its id
@@ -24,20 +32,15 @@ export async function POST(
     const file = form.get('file');
 
     if (!(file instanceof File)) {
+      recordFailure();
       return NextResponse.json(
         { success: false, error: 'NO_FILE' },
         { status: 400 }
       );
     }
 
-    if (file.type !== PDF_MIME) {
-      return NextResponse.json(
-        { success: false, error: 'INVALID_FILE_TYPE' },
-        { status: 400 }
-      );
-    }
-
     if (file.size > MAX_PDF_BYTES) {
+      recordFailure();
       return NextResponse.json(
         { success: false, error: 'FILE_TOO_LARGE' },
         { status: 400 }
@@ -45,6 +48,14 @@ export async function POST(
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
+
+    if (!looksLikePdfFile(file) && !hasPdfMagic(buffer)) {
+      recordFailure();
+      return NextResponse.json(
+        { success: false, error: 'INVALID_FILE_TYPE' },
+        { status: 400 }
+      );
+    }
 
     let rawText: string;
     try {

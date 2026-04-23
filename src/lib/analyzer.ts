@@ -10,17 +10,6 @@ import type {
   RiskLevel,
 } from './types';
 
-/**
- * Deterministic Hungarian "tulajdoni lap" analyzer.
- *
- * Parses the extracted PDF text using rules based on the standard structure:
- *   I. rész  — property (ingatlan) data
- *   II. rész — owners (tulajdonosok)
- *   III. rész — encumbrances and rights (terhek és jogok)
- *
- * No AI. Every flag is tied to a textual excerpt from the document.
- */
-
 const MAX_EXCERPT_LEN = 500;
 
 interface FlagRule {
@@ -63,8 +52,8 @@ const RED_RULES: FlagRule[] = [
     description_hu:
       'A tulajdonos ellen felszámolási vagy csődeljárás folyik, ami megakadályozhatja a tulajdonjog átruházását.',
     recommendation_hu:
-      'Ne kezdjen adásvételbe az eljárás lezárulta előtt — egyeztessen ügyvéddel.',
-    patterns: [/fel\s?sz[aá]mol[aá]s/i, /cs[oő]delj[aá]r[aá]s/i],
+      'Ne kezdjen adásvételbe az eljárás lezárulta előtt, egyeztessen ügyvéddel.',
+    patterns: [/fel\s?sz[aá]mol[aá]s/i, /cs[őo]delj[aá]r[aá]s/i],
     confidence: 'high',
   },
   {
@@ -111,7 +100,7 @@ const YELLOW_RULES: FlagRule[] = [
       'Harmadik félnek elővásárlási joga van az ingatlanra. Az adásvétel előtt az ajánlatot közölni kell vele.',
     recommendation_hu:
       'Az ügyvéd gondoskodjon az elővásárlásra jogosult szabályszerű értesítéséről.',
-    patterns: [/el[oő]v[aá]s[aá]rl[aá]si\s+jog/i],
+    patterns: [/el[őo]v[aá]s[aá]rl[aá]si\s+jog/i],
     confidence: 'high',
   },
   {
@@ -164,7 +153,7 @@ function riskScoreFromFlags(flags: AnalysisFlag[]): RiskLevel {
 
 function truncate(text: string, max = MAX_EXCERPT_LEN): string {
   const collapsed = text.replace(/\s+/g, ' ').trim();
-  return collapsed.length > max ? collapsed.slice(0, max - 1) + '…' : collapsed;
+  return collapsed.length > max ? `${collapsed.slice(0, max - 3)}...` : collapsed;
 }
 
 function findEvidence(
@@ -204,8 +193,8 @@ function parseProperty(text: string): PropertyInfo {
   const sectionI = detectSection(text, 'I') ?? text;
 
   const hrszMatch =
-    /helyrajzi\s+sz[aá]m[:\s]*([0-9][0-9\/.\-]*)/i.exec(sectionI) ??
-    /\bhrsz\.?[:\s]*([0-9][0-9\/.\-]*)/i.exec(sectionI);
+    /helyrajzi\s+sz[aá]m[:\s]*([0-9][0-9/.\-]*)/i.exec(sectionI) ??
+    /\bhrsz\.?[:\s]*([0-9][0-9/.\-]*)/i.exec(sectionI);
   if (hrszMatch) property.helyrajzi_szam = hrszMatch[1].trim();
 
   const addrMatch =
@@ -214,8 +203,8 @@ function parseProperty(text: string): PropertyInfo {
   if (addrMatch) property.cim = addrMatch[1].trim().replace(/\s{2,}/g, ' ');
 
   const areaMatch =
-    /ter[uü]let[:\s]*([0-9]{1,5}(?:[.,][0-9]+)?\s*m[²2])/i.exec(sectionI) ??
-    /([0-9]{1,5}(?:[.,][0-9]+)?\s*m[²2])/i.exec(sectionI);
+    /ter[uü]let[:\s]*([0-9]{1,5}(?:[.,][0-9]+)?\s*m(?:2|²))/i.exec(sectionI) ??
+    /([0-9]{1,5}(?:[.,][0-9]+)?\s*m(?:2|²))/i.exec(sectionI);
   if (areaMatch) property.terulet = areaMatch[1].trim();
 
   const nameMatch =
@@ -234,8 +223,7 @@ function parseOwners(text: string): Owner[] {
 
   const owners: Owner[] = [];
 
-  const shareRegex =
-    /tulajdoni\s+h[aá]nyad[:\s]*([0-9]+\s*\/\s*[0-9]+)/gi;
+  const shareRegex = /tulajdoni\s+h[aá]nyad[:\s]*([0-9]+\s*\/\s*[0-9]+)/gi;
   let shareMatch: RegExpExecArray | null;
   const shares: string[] = [];
   while ((shareMatch = shareRegex.exec(sectionII)) !== null) {
@@ -254,11 +242,13 @@ function parseOwners(text: string): Owner[] {
   const dates: string[] = [];
   let dateMatch: RegExpExecArray | null;
   while ((dateMatch = dateRegex.exec(sectionII)) !== null) {
-    dates.push(`${dateMatch[1]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[3].padStart(2, '0')}`);
+    dates.push(
+      `${dateMatch[1]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[3].padStart(2, '0')}`
+    );
   }
 
   const titleRegex =
-    /(ad[aá]sv[eé]tel|[oö]r[oö]kl[eé]s|aj[aá]nd[eé]koz[aá]s|csere|[eé]p[ií]t[eé]s)/gi;
+    /(ad[aá]sv[eé]tel|[öo]r[öo]kl[eé]s|aj[aá]nd[eé]koz[aá]s|csere|[eé]p[ií]t[eé]s)/gi;
   const titles: string[] = [];
   let titleMatch: RegExpExecArray | null;
   while ((titleMatch = titleRegex.exec(sectionII)) !== null) {
@@ -278,7 +268,11 @@ function parseOwners(text: string): Owner[] {
   return owners.filter((o) => o.name || o.ownership_share);
 }
 
-function detectFlags(text: string): AnalysisFlag[] {
+function detectFlags(
+  text: string,
+  owners: Owner[],
+  hasTerhekSection: boolean
+): AnalysisFlag[] {
   const flags: AnalysisFlag[] = [];
   const sectionIII = detectSection(text, 'III') ?? text;
 
@@ -307,18 +301,15 @@ function detectFlags(text: string): AnalysisFlag[] {
   tryRules(RED_RULES);
   tryRules(YELLOW_RULES);
 
-  const owners = parseOwners(text);
   if (owners.length > 1) {
     flags.push({
       id: randomUUID(),
       severity: 'yellow',
       category: 'Közös tulajdon',
-      title_hu: 'Közös tulajdon — több tulajdonos',
+      title_hu: 'Közös tulajdon - több tulajdonos',
       description_hu: `Az ingatlannak ${owners.length} tulajdonosa van. Adásvételhez minden tulajdonos hozzájárulása szükséges.`,
       evidence_excerpt: truncate(
-        owners
-          .map((o) => `${o.name ?? '?'} (${o.ownership_share ?? '?'})`)
-          .join('; ')
+        owners.map((o) => `${o.name ?? '?'} (${o.ownership_share ?? '?'})`).join('; ')
       ),
       source_section: 'II. rész',
       confidence: 'high',
@@ -328,10 +319,10 @@ function detectFlags(text: string): AnalysisFlag[] {
   }
 
   const hasEncumbrance =
-    /(jelz[aá]logjog|v[eé]grehajt|haszon[eé]lvez|szolgalmi|el[oő]v[aá]s[aá]rl|sz[eé]ljegy|tilalom)/i.test(
+    /(jelz[aá]logjog|v[eé]grehajt|haszon[eé]lvez|szolgalmi|el[őo]v[aá]s[aá]rl|sz[eé]ljegy|tilalom)/i.test(
       text
     );
-  if (!hasEncumbrance) {
+  if (hasTerhekSection && !hasEncumbrance) {
     flags.push({
       id: randomUUID(),
       severity: 'green',
@@ -406,7 +397,7 @@ function buildSummary(
     : property.helyrajzi_szam
       ? `Helyrajzi szám: ${property.helyrajzi_szam}`
       : 'Az ingatlan azonosító adatai nem voltak egyértelműen kinyerhetőek';
-  parts.push(propDesc + '.');
+  parts.push(`${propDesc}.`);
 
   if (owners.length === 0) {
     parts.push('Tulajdonosi adatok nem voltak egyértelműen azonosíthatók a dokumentumból.');
@@ -415,7 +406,7 @@ function buildSummary(
       `Egyetlen tulajdonos azonosítva${owners[0].name ? `: ${owners[0].name}` : ''}.`
     );
   } else {
-    parts.push(`Közös tulajdon — ${owners.length} tulajdonos szerepel a dokumentumban.`);
+    parts.push(`Közös tulajdon - ${owners.length} tulajdonos szerepel a dokumentumban.`);
   }
 
   const red = flags.filter((f) => f.severity === 'red').length;
@@ -443,17 +434,17 @@ function buildSummary(
 
 export function analyzeTulajdoniLap(rawText: string): AnalysisResult {
   const startedAt = Date.now();
-  const text = rawText.replace(/ /g, ' ');
+  const text = rawText.replace(/\u00a0/g, ' ');
 
   const property = parseProperty(text);
   const owners = parseOwners(text);
-  const flags = detectFlags(text);
-  const risk = riskScoreFromFlags(flags);
+  const hasTerhekSection = Boolean(detectSection(text, 'III'));
+  const flags = detectFlags(text, owners, hasTerhekSection);
 
   const readable = text.length >= 200;
   const qualityNotes: string[] = [];
   if (!readable) qualityNotes.push('A dokumentum rövid, lehet, hogy nem teljes.');
-  if (!detectSection(text, 'III')) {
+  if (!hasTerhekSection) {
     qualityNotes.push('A III. rész (terhek) nem azonosítható egyértelműen.');
     flags.push({
       id: randomUUID(),
@@ -470,6 +461,7 @@ export function analyzeTulajdoniLap(rawText: string): AnalysisResult {
     });
   }
 
+  const risk = riskScoreFromFlags(flags);
   const processingMs = Date.now() - startedAt;
   const stats = computeStats(text, flags, owners, processingMs);
   const summary = buildSummary(property, owners, flags, risk);

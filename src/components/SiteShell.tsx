@@ -42,9 +42,9 @@ export function SiteFooter() {
           <Link href="/adatvedelem" className="hover:text-slate-900">
             {HU.privacy_title}
           </Link>
-          <span aria-hidden>·</span>
+          <span aria-hidden>-</span>
           <span>
-            © {new Date().getFullYear()} {HU.app_name}
+            Copyright {new Date().getFullYear()} {HU.app_name}
           </span>
         </div>
       </div>

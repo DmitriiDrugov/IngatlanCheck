@@ -154,7 +154,7 @@ export default function StatsPage() {
                 {HU.stats_top_categories}
               </h2>
               {stats.top_flag_categories.length === 0 ? (
-                <p className="mt-4 text-sm text-slate-500">—</p>
+                <p className="mt-4 text-sm text-slate-500">-</p>
               ) : (
                 <ul className="mt-4 flex flex-col gap-3">
                   {stats.top_flag_categories.map((c) => {

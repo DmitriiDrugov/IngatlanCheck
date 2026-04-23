@@ -23,6 +23,10 @@ function mapError(code: string): string {
   return ERROR_MESSAGES[code] ?? HU.error_upload_failed;
 }
 
+function isPdfSelection(file: File): boolean {
+  return file.type === PDF_MIME || file.name.toLowerCase().endsWith('.pdf');
+}
+
 export function UploadDropzone() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -30,7 +34,7 @@ export function UploadDropzone() {
   const [dragOver, setDragOver] = useState(false);
 
   const pickFile = useCallback((file: File) => {
-    if (file.type !== PDF_MIME) {
+    if (!isPdfSelection(file)) {
       setState({ kind: 'error', message: HU.error_invalid_file });
       return;
     }
@@ -119,7 +123,7 @@ export function UploadDropzone() {
         <p className="text-xs text-slate-500">{HU.upload_limit}</p>
         {selectedFile && (
           <div className="mt-2 rounded-full bg-slate-900 px-4 py-1 text-xs text-white">
-            {selectedFile.name} ·{' '}
+            {selectedFile.name} -{' '}
             {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
           </div>
         )}

@@ -19,12 +19,12 @@ const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
   title: {
-    default: `${HU.app_name} — ${HU.tagline}`,
-    template: `%s · ${HU.app_name}`,
+    default: `${HU.app_name} - ${HU.tagline}`,
+    template: `%s - ${HU.app_name}`,
   },
   description: HU.hero_subtitle,
   openGraph: {
-    title: `${HU.app_name} — ${HU.tagline}`,
+    title: `${HU.app_name} - ${HU.tagline}`,
     description: HU.hero_subtitle,
     locale: 'hu_HU',
     type: 'website',

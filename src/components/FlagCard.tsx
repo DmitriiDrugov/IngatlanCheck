@@ -50,7 +50,7 @@ export function FlagCard({ flag }: { flag: AnalysisFlag }) {
         <span className="text-xs text-slate-500">{flag.category}</span>
         {flag.source_section && (
           <span className="text-xs text-slate-400">
-            · {HU.flag_section}: {flag.source_section}
+            - {HU.flag_section}: {flag.source_section}
           </span>
         )}
         <span className="ml-auto text-xs text-slate-400">

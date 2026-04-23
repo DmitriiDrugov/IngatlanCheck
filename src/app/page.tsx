@@ -75,8 +75,8 @@ export default function HomePage() {
             </div>
           </div>
           <div className="mt-4 border-t border-slate-100 pt-4 text-xs text-slate-500">
-            Helyrajzi szám: <span className="font-mono">12345/6</span> ·
-            Terület: 72 m²
+            Helyrajzi szám: <span className="font-mono">12345/6</span> -
+            Terület: 72 m2
           </div>
         </div>
       </section>
