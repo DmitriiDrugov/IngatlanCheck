@@ -2,8 +2,8 @@
 
 import { useCallback, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { HU } from '@/config/ui-text';
 import { MAX_PDF_BYTES, PDF_MIME } from '@/config/constants';
+import type { Messages } from '@/lib/i18n';
 
 type UiState =
   | { kind: 'idle' }
@@ -11,39 +11,41 @@ type UiState =
   | { kind: 'uploading' }
   | { kind: 'error'; message: string };
 
-const ERROR_MESSAGES: Record<string, string> = {
-  NO_FILE: HU.error_no_file,
-  INVALID_FILE_TYPE: HU.error_invalid_file,
-  FILE_TOO_LARGE: HU.error_file_too_large,
-  PDF_EXTRACTION_FAILED: HU.error_extraction_failed,
-  INTERNAL_ERROR: HU.error_analysis_failed,
-};
-
-function mapError(code: string): string {
-  return ERROR_MESSAGES[code] ?? HU.error_upload_failed;
-}
-
 function isPdfSelection(file: File): boolean {
   return file.type === PDF_MIME || file.name.toLowerCase().endsWith('.pdf');
 }
 
-export function UploadDropzone() {
+export function UploadDropzone({ messages }: { messages: Messages }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<UiState>({ kind: 'idle' });
   const [dragOver, setDragOver] = useState(false);
 
-  const pickFile = useCallback((file: File) => {
-    if (!isPdfSelection(file)) {
-      setState({ kind: 'error', message: HU.error_invalid_file });
-      return;
-    }
-    if (file.size > MAX_PDF_BYTES) {
-      setState({ kind: 'error', message: HU.error_file_too_large });
-      return;
-    }
-    setState({ kind: 'selected', file });
-  }, []);
+  const errorMessages: Record<string, string> = {
+    NO_FILE: messages.error_no_file,
+    INVALID_FILE_TYPE: messages.error_invalid_file,
+    FILE_TOO_LARGE: messages.error_file_too_large,
+    PDF_EXTRACTION_FAILED: messages.error_extraction_failed,
+    INTERNAL_ERROR: messages.error_analysis_failed,
+  };
+
+  const mapError = (code: string): string =>
+    errorMessages[code] ?? messages.error_upload_failed;
+
+  const pickFile = useCallback(
+    (file: File) => {
+      if (!isPdfSelection(file)) {
+        setState({ kind: 'error', message: messages.error_invalid_file });
+        return;
+      }
+      if (file.size > MAX_PDF_BYTES) {
+        setState({ kind: 'error', message: messages.error_file_too_large });
+        return;
+      }
+      setState({ kind: 'selected', file });
+    },
+    [messages]
+  );
 
   const onDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
@@ -55,7 +57,7 @@ export function UploadDropzone() {
     [pickFile]
   );
 
-  const submit = useCallback(async () => {
+  async function submit() {
     if (state.kind !== 'selected') return;
     setState({ kind: 'uploading' });
 
@@ -75,9 +77,9 @@ export function UploadDropzone() {
 
       router.push(`/report/${json.data.reportId}`);
     } catch {
-      setState({ kind: 'error', message: HU.error_upload_failed });
+      setState({ kind: 'error', message: messages.error_upload_failed });
     }
-  }, [state, router]);
+  }
 
   const reset = useCallback(() => {
     setState({ kind: 'idle' });
@@ -117,14 +119,11 @@ export function UploadDropzone() {
             d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 7.5 7.5 12M12 7.5v11.25"
           />
         </svg>
-        <p className="text-base font-medium text-slate-800">
-          {HU.upload_drag}
-        </p>
-        <p className="text-xs text-slate-500">{HU.upload_limit}</p>
+        <p className="text-base font-medium text-slate-800">{messages.upload_drag}</p>
+        <p className="text-xs text-slate-500">{messages.upload_limit}</p>
         {selectedFile && (
           <div className="mt-2 rounded-full bg-slate-900 px-4 py-1 text-xs text-white">
-            {selectedFile.name} -{' '}
-            {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
+            {selectedFile.name} - {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
           </div>
         )}
         <input
@@ -152,7 +151,7 @@ export function UploadDropzone() {
           disabled={state.kind !== 'selected'}
           className="inline-flex items-center justify-center rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
         >
-          {isUploading ? HU.upload_processing : HU.upload_button}
+          {isUploading ? messages.upload_processing : messages.upload_button}
         </button>
         {selectedFile && !isUploading && (
           <button
@@ -160,7 +159,7 @@ export function UploadDropzone() {
             onClick={reset}
             className="text-sm text-slate-500 underline-offset-2 hover:underline"
           >
-            {HU.upload_try_another}
+            {messages.upload_try_another}
           </button>
         )}
       </div>

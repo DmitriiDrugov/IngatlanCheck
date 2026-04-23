@@ -3,6 +3,7 @@ import { MAX_PDF_BYTES, PDF_MIME } from '@/config/constants';
 import { extractPdfText } from '@/lib/pdf';
 import { analyzeTulajdoniLap } from '@/lib/analyzer';
 import { createFailedReport, createReport } from '@/lib/report-store';
+import { pickLocale } from '@/lib/i18n';
 import { recordFailure } from '@/lib/stats';
 import type { ApiResponse } from '@/lib/types';
 
@@ -28,6 +29,7 @@ export async function POST(
   req: NextRequest
 ): Promise<NextResponse<ApiResponse<{ reportId: string }>>> {
   try {
+    const locale = pickLocale(req.cookies.get('locale')?.value);
     const form = await req.formData();
     const file = form.get('file');
 
@@ -63,7 +65,7 @@ export async function POST(
     } catch (e) {
       const message = e instanceof Error ? e.message : 'pdf-extract';
       console.error('[upload] pdf extraction failed', message);
-      const report = createFailedReport('PDF_EXTRACTION_FAILED');
+      const report = createFailedReport('PDF_EXTRACTION_FAILED', locale);
       recordFailure();
       return NextResponse.json(
         { success: false, error: 'PDF_EXTRACTION_FAILED' },
@@ -71,8 +73,8 @@ export async function POST(
       );
     }
 
-    const analysis = analyzeTulajdoniLap(rawText);
-    const report = createReport(analysis);
+    const analysis = analyzeTulajdoniLap(rawText, locale);
+    const report = createReport(analysis, locale);
 
     return NextResponse.json({
       success: true,

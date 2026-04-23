@@ -1,10 +1,17 @@
 import Link from 'next/link';
-import { HU } from '@/config/ui-text';
+import type { Locale, Messages } from '@/lib/i18n';
+import { LocaleSwitcher } from './LocaleSwitcher';
 
-export function SiteHeader() {
+export function SiteHeader({
+  locale,
+  messages,
+}: {
+  locale: Locale;
+  messages: Messages;
+}) {
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
+      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-4">
         <Link
           href="/"
           className="flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-900"
@@ -15,36 +22,39 @@ export function SiteHeader() {
           >
             IC
           </span>
-          {HU.app_name}
+          {messages.app_name}
         </Link>
-        <nav className="flex items-center gap-6 text-sm text-slate-600">
-          <Link href="/upload" className="hover:text-slate-900">
-            {HU.nav_upload}
-          </Link>
-          <Link href="/stats" className="hover:text-slate-900">
-            {HU.nav_stats}
-          </Link>
-          <Link href="/adatvedelem" className="hover:text-slate-900">
-            {HU.nav_privacy}
-          </Link>
-        </nav>
+        <div className="flex items-center gap-4">
+          <nav className="flex items-center gap-6 text-sm text-slate-600">
+            <Link href="/upload" className="hover:text-slate-900">
+              {messages.nav_upload}
+            </Link>
+            <Link href="/stats" className="hover:text-slate-900">
+              {messages.nav_stats}
+            </Link>
+            <Link href="/adatvedelem" className="hover:text-slate-900">
+              {messages.nav_privacy}
+            </Link>
+          </nav>
+          <LocaleSwitcher locale={locale} messages={messages} />
+        </div>
       </div>
     </header>
   );
 }
 
-export function SiteFooter() {
+export function SiteFooter({ messages }: { messages: Messages }) {
   return (
     <footer className="mt-auto border-t border-slate-200 bg-white">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-6 py-8 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-        <p>{HU.footer_about}</p>
+        <p>{messages.footer_about}</p>
         <div className="flex items-center gap-4">
           <Link href="/adatvedelem" className="hover:text-slate-900">
-            {HU.privacy_title}
+            {messages.privacy_title}
           </Link>
           <span aria-hidden>-</span>
           <span>
-            Copyright {new Date().getFullYear()} {HU.app_name}
+            {messages.copyright_label} {new Date().getFullYear()} {messages.app_name}
           </span>
         </div>
       </div>
@@ -52,10 +62,10 @@ export function SiteFooter() {
   );
 }
 
-export function ShowcaseBanner() {
+export function ShowcaseBanner({ messages }: { messages: Messages }) {
   return (
     <div className="bg-slate-900 text-center text-[11px] font-medium uppercase tracking-wide text-slate-200">
-      <div className="mx-auto max-w-6xl px-6 py-2">{HU.showcase_banner}</div>
+      <div className="mx-auto max-w-6xl px-6 py-2">{messages.showcase_banner}</div>
     </div>
   );
 }

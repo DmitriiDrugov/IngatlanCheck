@@ -1,3 +1,5 @@
+import type { Locale } from './i18n';
+
 export type ReportStatus = 'processing' | 'completed' | 'failed';
 
 export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
@@ -22,12 +24,12 @@ export interface AnalysisFlag {
   id: string;
   severity: FlagSeverity;
   category: string;
-  title_hu: string;
-  description_hu: string;
+  title: string;
+  description: string;
   evidence_excerpt: string;
   source_section: string | null;
   confidence: ConfidenceLevel;
-  recommendation_hu: string;
+  recommendation: string;
 }
 
 export interface DocumentStats {
@@ -46,18 +48,19 @@ export interface DocumentStats {
 export interface AnalysisResult {
   document_quality: {
     readable: boolean;
-    notes_hu: string | null;
+    notes: string | null;
   };
   ingatlan: PropertyInfo;
   tulajdonosok: Owner[];
   flags: AnalysisFlag[];
   risk_score: RiskLevel;
-  summary_hu: string;
+  summary: string;
   stats: DocumentStats;
 }
 
 export interface Report {
   id: string;
+  locale: Locale;
   status: ReportStatus;
   analysis: AnalysisResult | null;
   error_message: string | null;

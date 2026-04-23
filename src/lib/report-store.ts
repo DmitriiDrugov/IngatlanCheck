@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { REPORT_TTL_MS } from '@/config/constants';
+import type { Locale } from './i18n';
 import type { AnalysisResult, Report } from './types';
 import { recordAnalysis } from './stats';
 
@@ -29,7 +30,7 @@ function prune(store: Store): void {
   }
 }
 
-export function createReport(analysis: AnalysisResult): Report {
+export function createReport(analysis: AnalysisResult, locale: Locale): Report {
   const store = getStore();
   prune(store);
 
@@ -37,6 +38,7 @@ export function createReport(analysis: AnalysisResult): Report {
   const now = new Date();
   const report: StoredReport = {
     id,
+    locale,
     status: 'completed',
     analysis,
     error_message: null,
@@ -51,7 +53,10 @@ export function createReport(analysis: AnalysisResult): Report {
   return stripInternal(report);
 }
 
-export function createFailedReport(errorMessage: string): Report {
+export function createFailedReport(
+  errorMessage: string,
+  locale: Locale
+): Report {
   const store = getStore();
   prune(store);
 
@@ -59,6 +64,7 @@ export function createFailedReport(errorMessage: string): Report {
   const now = new Date();
   const report: StoredReport = {
     id,
+    locale,
     status: 'failed',
     analysis: null,
     error_message: errorMessage,
