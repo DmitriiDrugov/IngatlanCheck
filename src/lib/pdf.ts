@@ -1,17 +1,6 @@
-import { PDFParse } from 'pdf-parse';
-import { CanvasFactory, getData as getWorkerData } from 'pdf-parse/worker';
 import { MIN_EXTRACTED_CHARS } from '@/config/constants';
 
 let workerConfigured = false;
-
-function ensurePdfWorkerConfigured(): void {
-  if (workerConfigured) return;
-
-  // The inline worker payload is the most reliable option in serverless
-  // environments such as Vercel because it avoids filesystem lookups entirely.
-  PDFParse.setWorker(getWorkerData());
-  workerConfigured = true;
-}
 
 /**
  * Extracts plain text from a PDF buffer.
@@ -19,12 +8,31 @@ function ensurePdfWorkerConfigured(): void {
  * (e.g. scanned image-only PDFs).
  */
 export async function extractPdfText(buffer: Buffer): Promise<string> {
-  ensurePdfWorkerConfigured();
+  const [{ PDFParse }, workerModule] = await Promise.all([
+    import('pdf-parse'),
+    import('pdf-parse/worker').catch((error) => {
+      console.warn('[pdf] worker module unavailable, falling back without explicit worker', error);
+      return null;
+    }),
+  ]);
 
-  const parser = new PDFParse({
+  if (!workerConfigured && workerModule?.getData) {
+    PDFParse.setWorker(workerModule.getData());
+    workerConfigured = true;
+  }
+
+  const parserOptions: {
+    data: Uint8Array;
+    CanvasFactory?: object;
+  } = {
     data: new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength),
-    CanvasFactory,
-  });
+  };
+
+  if (workerModule?.CanvasFactory) {
+    parserOptions.CanvasFactory = workerModule.CanvasFactory as object;
+  }
+
+  const parser = new PDFParse(parserOptions);
 
   try {
     const result = await parser.getText();
